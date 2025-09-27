@@ -1,0 +1,49 @@
+import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
+
+# === Load labels for Pascal VOC ===
+CLASS_NAMES = [
+    "aeroplane", "bicycle", "bird", "boat", "bottle",
+    "bus", "car", "cat", "chair", "cow",
+    "diningtable", "dog", "horse", "motorbike", "person",
+    "pottedplant", "sheep", "sofa", "train", "tvmonitor"
+]
+
+IMG_SIZE = 224
+
+# === Load trained model ===
+model = tf.keras.models.load_model("mobilenet_voc.h5")
+
+# === Prediction Function ===
+def predict_image(image_path):
+    # Load and preprocess image
+    img_raw = tf.io.read_file(image_path)
+    img = tf.image.decode_jpeg(img_raw, channels=3)
+    img_resized = tf.image.resize(img, (IMG_SIZE, IMG_SIZE)) / 255.0
+    img_input = tf.expand_dims(img_resized, 0)  # add batch dimension
+
+    # Predict
+    preds = model.predict(img_input, verbose=0)[0]  # shape (20,)
+
+    # Find the index of the highest score
+    max_score_index = np.argmax(preds)
+    predicted_label = CLASS_NAMES[max_score_index]
+    confidence_score = preds[max_score_index]
+
+    print("🔹 Raw scores:", preds)
+    print(f"✅ Predicted label: {predicted_label} (Confidence: {confidence_score:.4f})")
+
+
+    # === Show image with predictions ===
+    plt.figure(figsize=(6, 6))
+    plt.imshow(img.numpy().astype("uint8"))
+    plt.axis("off")
+    plt.title(f"Predicted: {predicted_label} ({confidence_score:.4f})")
+    plt.show()
+
+    return predicted_label, confidence_score
+
+# === Example usage ===
+test_image ="/content/2011_000559.jpg"  # change path as needed
+predicted_label, confidence_score = predict_image(test_image)
